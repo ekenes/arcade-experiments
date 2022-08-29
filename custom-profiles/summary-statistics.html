@@ -1,15 +1,9 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="initial-scale=1,maximum-scale=1,user-scalable=no"
-    />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no"/>
 
-    <title>
-      Execute Arcade for a custom chart | Sample | ArcGIS API for JavaScript
-      4.24
-    </title>
+    <title>Arcade profiles - summary statistics by geometry</title>
 
     <style>
       html,
@@ -38,37 +32,25 @@
     </style>
 
     <!-- ArcGIS JS API -->
-    <link
-      rel="stylesheet"
-      href="https://js.arcgis.com/4.24/esri/themes/light/main.css"
-    />
+    <link rel="stylesheet" href="https://js.arcgis.com/4.24/esri/themes/light/main.css"/>
     <script src="https://js.arcgis.com/4.24/"></script>
 
     <script>
       require([
         "esri/views/MapView",
         "esri/WebMap",
-        "esri/symbols/support/symbolUtils",
-        "esri/core/reactiveUtils",
-        "esri/widgets/Legend",
-        "esri/widgets/Expand",
-        "esri/widgets/Bookmarks",
         "esri/widgets/Slider",
         "esri/Graphic",
         "esri/arcade"
       ], function (
         MapView,
         WebMap,
-        symbolUtils,
-        reactiveUtils,
-        Legend,
-        Expand,
-        Bookmarks,
         Slider,
         Graphic,
         arcade
       ) {
         (async () => {
+
           const webmap = new WebMap({
             basemap: "gray-vector"
           });
@@ -76,14 +58,17 @@
           const view = new MapView({
             map: webmap,
             container: "viewDiv",
-            center: [-117.15175689660657, 32.723550949738346 ],
-            scale: 36111.909643,
+            center: [-117.15176, 32.72355 ],
+            scale: 36111,
             popup: {
               dockEnabled: true,
               dockOptions: {
                 breakpoint: false,
                 position: "top-right"
               }
+            },
+            constraints: {
+              snapToZoom: false
             }
           });
 
@@ -201,11 +186,9 @@
             dataProfile
           );
 
-          console.log("executor", dataArcadeExecutor);
-
           let currentPoint = null;
 
-          async function createArcadeLayer({
+          async function fetchSummaryStatistics({
             mapPoint,
             distance
           }) {
@@ -220,10 +203,7 @@
               spatialReference: view.spatialReference
             });
 
-            console.log(arcadeResult);
-
             displayDiv.innerHTML = arcadeResult.table;
-
             addBuffer(arcadeResult.buffer);
           }
 
@@ -233,7 +213,7 @@
             const distance = distanceSlider.values[0];
 
             document.body.style.cursor = "wait";
-            await createArcadeLayer({ mapPoint, distance });
+            await fetchSummaryStatistics({ mapPoint, distance });
             document.body.style.cursor = "default";
           });
 
@@ -243,7 +223,7 @@
             }
 
             document.body.style.cursor = "wait";
-            await createArcadeLayer({ mapPoint: currentPoint, distance: value });
+            await fetchSummaryStatistics({ mapPoint: currentPoint, distance: value });
             document.body.style.cursor = "default";
           });
 
