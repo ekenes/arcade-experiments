@@ -1,15 +1,9 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="initial-scale=1,maximum-scale=1,user-scalable=no"
-    />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no"/>
 
-    <title>
-      Execute Arcade for a custom chart | Sample | ArcGIS API for JavaScript
-      4.24
-    </title>
+    <title>Arcade profiles - Time range</title>
 
     <style>
       html,
@@ -28,38 +22,28 @@
     </style>
 
     <!-- ArcGIS JS API -->
-    <link
-      rel="stylesheet"
-      href="https://js.arcgis.com/4.24/esri/themes/dark/main.css"
-    />
+    <link rel="stylesheet" href="https://js.arcgis.com/4.24/esri/themes/light/main.css"/>
     <script src="https://js.arcgis.com/4.24/"></script>
 
     <script>
       require([
         "esri/views/MapView",
         "esri/WebMap",
-        "esri/symbols/support/symbolUtils",
-        "esri/core/reactiveUtils",
         "esri/widgets/Legend",
         "esri/widgets/Expand",
-        "esri/widgets/Bookmarks",
         "esri/widgets/TimeSlider",
         "esri/arcade"
       ], (
         MapView,
         WebMap,
-        symbolUtils,
-        reactiveUtils,
         Legend,
         Expand,
-        Bookmarks,
         TimeSlider,
         arcade
       ) => {
       (async () => {
           const webmap = new WebMap({
             portalItem: {
-              // autocasts as new PortalItem()
               id: "bd4ac3acb0d14b739b701ee9a3e3e077"
             }
           });
@@ -69,14 +53,9 @@
             map: webmap
           });
 
-          // Add legend
-          const legend = new Legend({
-            view: view,
-            style: "card"
-          });
-          view.ui.add(new Expand({ view, content: legend }), "top-left");
+          view.ui.add(new Expand({ view, content: new Legend({ view }) }), "top-left");
 
-          // get timeslider settings from the webmap & create timeslider, add it to the view UI
+          // get time settings from the web map
           const timeSliderSettings = await TimeSlider.getPropertiesFromWebMap(webmap);
           const timeSliderDiv = document.createElement("div");
           timeSliderDiv.id = "timeSliderDiv";
@@ -86,7 +65,7 @@
           }
 
           const timeSlider = new TimeSlider({
-            ...timeSliderSettings, // imported settings from webmap
+            ...timeSliderSettings,
             view,
             container: timeSliderDiv
           });
@@ -97,7 +76,7 @@
 
           await view.when();
 
-          const timeProfile = {
+          const timeRangeProfile = {
             variables: [
               {
                 name: "$timeExtent",
@@ -112,35 +91,25 @@
                     type: "date"
                   }
                 ]
+              }, {
+                name: "$unit",
+                type: "text"
               }
             ]
           };
 
           const timeExpression = `
             Text(
-              DateDiff($timeExtent.end, $timeExtent.start, "days"),
-              "#,### days"
-            )
-          `;
-
-          const dynamicTimeExpression = `
-            var diffDays = DateDiff($timeExtent.end, $timeExtent.start, "days");
-            var result = Text(diffDays, "#,### days");
-
-            if(diffDays >= 30){
-              var diffMonths = DateDiff($timeExtent.end, $timeExtent.start, "months");
-              result += " (" + Text(diffMonths, "#,### months") + ")";
-            }
-            return result;
+              DateDiff($timeExtent.end, $timeExtent.start, $unit),
+              "#,###"
+            ) + " " + $unit
           `;
 
           // Compile the expression and create an executor
           const arcadeExecutor = await arcade.createArcadeExecutor(
-            dynamicTimeExpression,
-            timeProfile
+            timeExpression,
+            timeRangeProfile
           );
-
-          console.log("executor", arcadeExecutor);
 
           const intervalValue = document.getElementById("intervalValue");
 
@@ -149,7 +118,8 @@
               $timeExtent: {
                 start: timeExtent.start,
                 end: timeExtent.end
-              }
+              },
+              $unit: "days"
             });
 
             intervalValue.innerText = timeLength;
