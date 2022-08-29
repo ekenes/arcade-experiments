@@ -1,0 +1,171 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+
+    <title>
+      Execute Arcade for a custom chart | Sample | ArcGIS API for JavaScript
+      4.24
+    </title>
+
+    <style>
+      html,
+      body,
+      #viewDiv{
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+      }
+      #displayDiv{
+        padding: 10px;
+        font-size:larger;
+      }
+    </style>
+
+    <!-- ArcGIS JS API -->
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.24/esri/themes/dark/main.css"
+    />
+    <script src="https://js.arcgis.com/4.24/"></script>
+
+    <script>
+      require([
+        "esri/views/MapView",
+        "esri/WebMap",
+        "esri/symbols/support/symbolUtils",
+        "esri/core/reactiveUtils",
+        "esri/widgets/Legend",
+        "esri/widgets/Expand",
+        "esri/widgets/Bookmarks",
+        "esri/widgets/TimeSlider",
+        "esri/arcade"
+      ], (
+        MapView,
+        WebMap,
+        symbolUtils,
+        reactiveUtils,
+        Legend,
+        Expand,
+        Bookmarks,
+        TimeSlider,
+        arcade
+      ) => {
+      (async () => {
+          const webmap = new WebMap({
+            portalItem: {
+              // autocasts as new PortalItem()
+              id: "bd4ac3acb0d14b739b701ee9a3e3e077"
+            }
+          });
+
+          const view = new MapView({
+            container: "viewDiv",
+            map: webmap
+          });
+
+          // Add legend
+          const legend = new Legend({
+            view: view,
+            style: "card"
+          });
+          view.ui.add(new Expand({ view, content: legend }), "top-left");
+
+          // get timeslider settings from the webmap & create timeslider, add it to the view UI
+          const timeSliderSettings = await TimeSlider.getPropertiesFromWebMap(webmap);
+          const timeSliderDiv = document.createElement("div");
+          timeSliderDiv.id = "timeSliderDiv";
+
+          if(timeSliderSettings?.stops?.interval?.unit){
+            timeSliderSettings.stops.interval.unit = "days";
+          }
+
+          const timeSlider = new TimeSlider({
+            ...timeSliderSettings, // imported settings from webmap
+            view,
+            container: timeSliderDiv
+          });
+          const displayDiv = document.getElementById("displayDiv");
+          displayDiv.appendChild(timeSliderDiv);
+
+          view.ui.add("displayDiv", "bottom-left");
+
+          await view.when();
+
+          const timeProfile = {
+            variables: [
+              {
+                name: "$timeExtent",
+                type: "dictionary",
+                properties: [
+                  {
+                    name: "start",
+                    type: "date"
+                  },
+                  {
+                    name: "end",
+                    type: "date"
+                  }
+                ]
+              }
+            ]
+          };
+
+          const timeExpression = `
+            Text(
+              DateDiff($timeExtent.end, $timeExtent.start, "days"),
+              "#,### days"
+            )
+          `;
+
+          const dynamicTimeExpression = `
+            var diffDays = DateDiff($timeExtent.end, $timeExtent.start, "days");
+            var result = Text(diffDays, "#,### days");
+
+            if(diffDays >= 30){
+              var diffMonths = DateDiff($timeExtent.end, $timeExtent.start, "months");
+              result += " (" + Text(diffMonths, "#,### months") + ")";
+            }
+            return result;
+          `;
+
+          // Compile the expression and create an executor
+          const arcadeExecutor = await arcade.createArcadeExecutor(
+            dynamicTimeExpression,
+            timeProfile
+          );
+
+          console.log("executor", arcadeExecutor);
+
+          const intervalValue = document.getElementById("intervalValue");
+
+          function calculateTimeExtent (timeExtent) {
+            const timeLength = arcadeExecutor.execute({
+              $timeExtent: {
+                start: timeExtent.start,
+                end: timeExtent.end
+              }
+            });
+
+            intervalValue.innerText = timeLength;
+          }
+
+          timeSlider.watch("timeExtent", calculateTimeExtent);
+          calculateTimeExtent(timeSlider.timeExtent);
+
+        })();
+      });
+    </script>
+  </head>
+  <body>
+    <div id="viewDiv"></div>
+    <div id="displayDiv" class="esri-widget">
+      <div id="intervalDiv">Time interval: <span id="intervalValue"></span></div>
+    </div>
+  </body>
+</html>
