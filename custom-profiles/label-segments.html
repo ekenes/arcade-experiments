@@ -4,7 +4,7 @@
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no"/>
     <title>Arcade profiles - line segment labeling</title>
 
-    <link rel="stylesheet" href="https://js.arcgis.com/4.24/esri/themes/light/main.css" />
+    <link rel="stylesheet" href="https://js.arcgis.com/4.24/esri/themes/light/main.css"/>
     <script src="https://js.arcgis.com/4.24/"></script>
 
     <style>
@@ -40,14 +40,13 @@
 
           const textSymbolBase = new TextSymbol({
             angle: 0,
-            color: "black",// "#F57F04",
+            color: "black",
             font: {
               family: "Orbitron",
               style: "normal",
               weight: "bold",
               size: 9
             },
-
             haloColor: "white",
             haloSize: 1.5,
             yoffset: 4,
@@ -131,10 +130,24 @@
             var d = DistanceGeodetic(previousPoint, finalPoint, "meters");
 
             return {
-              angle: a,
-              bearing: b,
-              text: \`\${Text(d, "#,###.#")}m\nBearing: \${Text(b, "#.#°")} (\${c})\nAngle: \${Text(a, "#.#°")}\`,
-              segmentCentroid: Centroid([previousPoint, finalPoint])
+              label: {
+                text: \`\${Text(d, "#,###.#")}m\nBearing: \${Text(b, "#.#°")} (\${c})\nAngle: \${Text(a, "#.#°")}\`,
+                angle: iif(b < 180, a * -1, a * -1 + 180),
+                color: "black",
+                font: {
+                  family: "Orbitron",
+                  style: "normal",
+                  weight: "bold",
+                  size: 9
+                },
+                haloColor: "white",
+                haloSize: 1.5,
+                yoffset: 4,
+                xoffset: iif((b <= 180 && b > 90) || b >= 270, 4, -4),
+                horizontalAlignment: "center",
+                verticalAlignment: "bottom"
+              },
+              location: Centroid([previousPoint, finalPoint])
             };
           `;
 
@@ -162,19 +175,14 @@
               graphic.attributes = {
                 lineId: createId
               };
-              const textSymbol = textSymbolBase.clone();
 
-              const { text, angle, bearing, segmentCentroid } = arcadeExecutor.execute({
+              const { label, location } = arcadeExecutor.execute({
                 $feature: graphic
               });
 
-              textSymbol.angle = bearing < 180 ? angle * -1 : angle * -1 + 180;
-              textSymbol.xoffset = (bearing <= 180 && bearing > 90) || bearing >= 270 ? 4 : -4;
-              textSymbol.text = text;
-
               activeLabel = new Graphic({
-                symbol: textSymbol,
-                geometry: segmentCentroid,
+                symbol: new TextSymbol(label),
+                geometry: location,
                 attributes: {
                   lineId: createId
                 }
@@ -230,11 +238,26 @@
                 var d = DistanceGeodetic(firstPoint, lastPoint, "meters");
 
                 Push(labels, {
-                  angle: a,
-                  bearing: b,
-                  text: \`\${Text(d, "#,###.#")}m\nBearing: \${Text(b, "#.#°")} (\${c})\nAngle: \${Text(a, "#.#°")}\`,
-                  segmentCentroid: Centroid([firstPoint, lastPoint])
+                  label: {
+                    text: \`\${Text(d, "#,###.#")}m\nBearing: \${Text(b, "#.#°")} (\${c})\nAngle: \${Text(a, "#.#°")}\`,
+                    angle: iif(b < 180, a * -1, a * -1 + 180),
+                    color: "black",
+                    font: {
+                      family: "Orbitron",
+                      style: "normal",
+                      weight: "bold",
+                      size: 9
+                    },
+                    haloColor: "white",
+                    haloSize: 1.5,
+                    yoffset: 4,
+                    xoffset: iif((b <= 180 && b > 90) || b >= 270, 4, -4),
+                    horizontalAlignment: "center",
+                    verticalAlignment: "bottom"
+                  },
+                  location: Centroid([firstPoint, lastPoint])
                 });
+
                 firstPoint = lastPoint;
                 lastPoint = null;
               }
@@ -262,17 +285,11 @@
                   $feature: graphic
                 });
 
-                const labelGraphics = labels.map(({bearing, angle, segmentCentroid, text}) => {
-
-                  const textSymbol = textSymbolBase.clone();
-
-                  textSymbol.angle = bearing < 180 ? angle * -1 : angle * -1 + 180;
-                  textSymbol.xoffset = (bearing <= 180 && bearing > 90) || bearing >= 270 ? 4 : -4;
-                  textSymbol.text = text;
+                const labelGraphics = labels.map(({ label, location }) => {
 
                   activeLabel = new Graphic({
-                    symbol: textSymbol,
-                    geometry: segmentCentroid,
+                    symbol: new TextSymbol(label),
+                    geometry: location,
                     attributes: {
                       lineId: graphic.attributes.lineId
                     }
