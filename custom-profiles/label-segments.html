@@ -115,7 +115,7 @@
 
             return {
               label: {
-                text: \`\${Text(d, "#,###.#")}m\nBearing: \${Text(b, "#.#°")} (\${c})\nAngle: \${Text(a, "#.#°")}\`,
+                text: Text(d, "#,###.#") + "m\\nBearing: " + Text(b, "#.#°") + " (" + c + ")",
                 // symbol angle direction is opposite of Angle function
                 angle: iif(b < 180, a * -1, a * -1 + 180),
                 color: "black",
@@ -222,7 +222,7 @@
 
                 Push(labels, {
                   label: {
-                    text: \`\${Text(d, "#,###.#")}m\nBearing: \${Text(b, "#.#°")} (\${c})\nAngle: \${Text(a, "#.#°")}\`,
+                    text: Text(d, "#,###.#") + "m\\nBearing: " + Text(b, "#.#°") + " (" + c + ")",
                     angle: iif(b < 180, a * -1, a * -1 + 180),
                     color: "black",
                     font: {

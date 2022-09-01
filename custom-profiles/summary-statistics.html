@@ -204,7 +204,7 @@
             });
 
             displayDiv.innerHTML = arcadeResult.table;
-            addBuffer(arcadeResult.buffer);
+            addBufferToView(arcadeResult.buffer);
           }
 
           view.on("click", async (event) => {
@@ -227,7 +227,7 @@
             document.body.style.cursor = "default";
           });
 
-          function addBuffer(buffer){
+          function addBufferToView(buffer){
             view.graphics.removeAll();
             view.graphics.add(new Graphic({
               attributes: {
