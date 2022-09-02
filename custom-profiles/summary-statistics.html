@@ -129,7 +129,7 @@
             var topCrimes = Top(
               OrderBy(
                 GroupBy(
-                  Intersects( features, bufferGeometry ),
+                  Intersects( features, Generalize(bufferGeometry, 10, true, "meters") ),
                   "type",
                   [
                     { name: "total", expression: "1", statistic: "count" },
