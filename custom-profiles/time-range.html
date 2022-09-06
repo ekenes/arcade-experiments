@@ -114,12 +114,9 @@
 
           const intervalValue = document.getElementById("intervalValue");
 
-          function calculateTimeExtent (timeExtent) {
+          function calculateTimeExtent ({ start, end }) {
             const timeLength = arcadeExecutor.execute({
-              $timeExtent: {
-                start: timeExtent.start,
-                end: timeExtent.end
-              },
+              $timeExtent: { start, end },
               $unit: "days"
             });
 
